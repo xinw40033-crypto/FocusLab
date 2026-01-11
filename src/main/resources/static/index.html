@@ -1,0 +1,2210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>专注力训练系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* 儿童友好提示框样式 */
+        .kid-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .kid-modal-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .kid-modal {
+            background: white;
+            border-radius: 25px;
+            padding: 35px;
+            max-width: 90%;
+            width: 420px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            animation: bounceIn 0.5s ease;
+            text-align: center;
+        }
+        
+        .kid-modal-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 1s infinite;
+        }
+        
+        .kid-modal-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .kid-modal-message {
+            font-size: 20px;
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 25px;
+        }
+        
+        .kid-modal-button {
+            padding: 12px 40px;
+            font-size: 20px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .kid-modal-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .kid-modal.success .kid-modal-title { color: #28a745; }
+        .kid-modal.success .kid-modal-button { 
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .kid-modal.error .kid-modal-title { color: #dc3545; }
+        .kid-modal.error .kid-modal-button { 
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+        }
+        
+        .kid-modal.warning .kid-modal-title { color: #ffc107; }
+        .kid-modal.warning .kid-modal-button { 
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            color: white;
+        }
+        
+        .kid-modal.info .kid-modal-title { color: #17a2b8; }
+        .kid-modal.info .kid-modal-button { 
+            background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
+            color: white;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 儿童友好提示框 -->
+    <div id="kidModalOverlay" class="kid-modal-overlay" onclick="closeKidModal(event)">
+        <div class="kid-modal" id="kidModal">
+            <div class="kid-modal-icon" id="kidModalIcon"></div>
+            <div class="kid-modal-title" id="kidModalTitle"></div>
+            <div class="kid-modal-message" id="kidModalMessage"></div>
+            <button class="kid-modal-button" id="kidModalButton" onclick="closeKidModal()"></button>
+        </div>
+    </div>
+    
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: rgba(255,255,255,0.9); padding: 15px 25px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+        <span style="color: #667eea; font-weight: bold;">👤 <span id="currentUser">游客</span></span>
+        <button class="btn btn-sm btn-outline-danger ms-3" onclick="logout()" id="logoutBtn" style="display: none;">退出</button>
+    </div>
+    
+    <h1>🎯 专注力训练系统</h1>
+    <p class="subtitle">培养专注力，增强认知能力！</p>
+    
+    <div class="container">
+        <!-- 训练进度 -->
+        <h2>📊 我的训练进度</h2>
+        <div class="row mb-4">
+            <div class="col-md-4 mb-3">
+                <div class="progress-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h3>已完成训练</h3>
+                    <div class="display-4" id="completed-count">0</div>
+                    <p>次</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="progress-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                    <h3>平均得分</h3>
+                    <div class="display-4" id="avg-score">0.0</div>
+                    <p>分</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="progress-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <h3>进步趋势</h3>
+                    <div class="display-4" id="trend">↑</div>
+                    <p>趋势</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 训练记录列表 -->
+        <h2>📊 训练记录</h2>
+        <div class="card" style="border: none; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 30px;">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                            <tr>
+                                <th>训练项目</th>
+                                <th>难度</th>
+                                <th>得分</th>
+                                <th>准确率</th>
+                                <th>用时</th>
+                                <th>完成时间</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recordsTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">加载中...</span>
+                                    </div>
+                                    <p class="mt-2">正在加载训练记录...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div id="recordsPagination" class="text-center mt-3"></div>
+            </div>
+        </div>
+
+        <!-- 训练类型选择 -->
+        <h2>🎮 选择训练类型</h2>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card training-card card-arrow">
+                    <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 72px; color: white;">➔</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">箭头追踪</h5>
+                        <p class="card-text">跟随箭头路径，锻炼视觉追踪能力</p>
+                        <button class="btn btn-primary" onclick="startTraining('ARROW_TRACKING')">开始训练</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card training-card card-number-rep">
+                    <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 72px; color: white;">123</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">数字重复查找</h5>
+                        <p class="card-text">找出重复出现的数字，提高注意力集中度</p>
+                        <button class="btn" onclick="startTraining('NUMBER_REPETITION')">开始训练</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card training-card card-animal">
+                    <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 72px; color: white;">🐾</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">动物数字匹配</h5>
+                        <p class="card-text">将动物与其对应的数字匹配，训练记忆能力</p>
+                        <button class="btn" onclick="startTraining('ANIMAL_NUMBER_MATCH')">开始训练</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card training-card card-hidden">
+                    <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 72px; color: white;">🔍</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">寻宝游戏</h5>
+                        <p class="card-text">在复杂场景中寻找特定物品，锻炼观察力</p>
+                        <button class="btn" onclick="startTraining('HIDDEN_OBJECT')">开始训练</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card training-card card-compare">
+                    <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 72px; color: white;">&lt;&gt;</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">数字对比</h5>
+                        <p class="card-text">比较数字大小关系，提升判断能力</p>
+                        <button class="btn" onclick="startTraining('NUMBER_COMPARE')">开始训练</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card training-card card-schultz">
+                    <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 72px; color: #333;">☷</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">舒尔特方格</h5>
+                        <p class="card-text">按顺序点击数字，训练注意力转移能力</p>
+                        <button class="btn" onclick="startTraining('SCHULTZ_TABLE')">开始训练</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card training-card card-symbol">
+                    <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 72px; color: #333;">★●■</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">符号矩阵</h5>
+                        <p class="card-text">识别符号模式，提升视觉分辨能力</p>
+                        <button class="btn" onclick="startTraining('SYMBOL_MATRIX')">开始训练</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card training-card card-migration">
+                    <div class="card-img-top" style="height: 200px; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); display: flex; align-items: center; justify-content: center;">
+                        <span style="font-size: 72px; color: white;">⇄</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">数字迁移</h5>
+                        <p class="card-text">记忆数字移动路径，训练工作记忆</p>
+                        <button class="btn" onclick="startTraining('NUMBER_MIGRATION')">开始训练</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #fff;
+            text-align: center;
+            font-size: 48px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #fff;
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 30px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .progress-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .progress-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .progress-card h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .progress-card .display-4 {
+            font-size: 48px;
+            font-weight: bold;
+        }
+        
+        h2 {
+            color: #764ba2;
+            font-weight: bold;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .training-card {
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .training-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+        }
+        
+        .training-card .card-body {
+            padding: 20px;
+        }
+        
+        .training-card .card-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .training-card .card-text {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .training-card .btn {
+            border-radius: 20px;
+            padding: 10px 30px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        /* 每个训练卡片的主题色 */
+        .card-arrow { border-top: 5px solid #667eea; }
+        .card-arrow .btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; }
+        
+        .card-number-rep { border-top: 5px solid #f093fb; }
+        .card-number-rep .btn { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; }
+        
+        .card-animal { border-top: 5px solid #4facfe; }
+        .card-animal .btn { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border: none; }
+        
+        .card-hidden { border-top: 5px solid #fa709a; }
+        .card-hidden .btn { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border: none; }
+        
+        .card-compare { border-top: 5px solid #30cfd0; }
+        .card-compare .btn { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); border: none; }
+        
+        .card-schultz { border-top: 5px solid #a8edea; }
+        .card-schultz .btn { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333; }
+        
+        .card-symbol { border-top: 5px solid #ffecd2; }
+        .card-symbol .btn { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #333; }
+        
+        .card-migration { border-top: 5px solid #ff9a9e; }
+        .card-migration .btn { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); color: #333; }
+        
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+            }
+            
+            h1 {
+                font-size: 32px;
+                margin-top: 80px;
+            }
+            
+            .subtitle {
+                font-size: 16px;
+            }
+            
+            .container {
+                border-radius: 0;
+                padding: 20px 15px;
+                margin-top: 0;
+                margin-bottom: 0;
+            }
+            
+            /* 顶部用户信息栏 */
+            div[style*="position: fixed"] {
+                top: 10px !important;
+                right: 10px !important;
+                padding: 10px 15px !important;
+                font-size: 14px;
+            }
+            
+            /* 进度卡片 */
+            .progress-card {
+                padding: 15px;
+                margin-bottom: 10px;
+            }
+            
+            .progress-card h3 {
+                font-size: 14px;
+            }
+            
+            .progress-card .display-4 {
+                font-size: 36px;
+            }
+            
+            .progress-card p {
+                font-size: 12px;
+            }
+            
+            /* 训练卡片 */
+            .training-card .card-img-top {
+                height: 150px !important;
+            }
+            
+            .training-card .card-img-top span {
+                font-size: 48px !important;
+            }
+            
+            .training-card .card-body {
+                padding: 15px;
+            }
+            
+            .training-card .card-title {
+                font-size: 18px;
+            }
+            
+            .training-card .card-text {
+                font-size: 13px;
+            }
+            
+            .training-card .btn {
+                padding: 8px 20px;
+                font-size: 14px;
+            }
+            
+            h2 {
+                font-size: 22px;
+                margin-top: 20px;
+                margin-bottom: 15px;
+            }
+            
+            /* 训练界面触摸优化 */
+            canvas {
+                touch-action: none;
+                -webkit-user-select: none;
+                user-select: none;
+            }
+            
+            /* 按钮触摸优化 */
+            .btn, button {
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+            }
+            
+            /* 模态框适配 */
+            .modal-dialog {
+                margin: 10px auto;
+                min-height: calc(100vh - 20px);
+            }
+            
+            .modal-content {
+                border-radius: 15px;
+            }
+            
+            .modal-body {
+                padding: 20px 15px;
+            }
+            
+            /* 表格横向滚动 */
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+        
+        /* 小屏手机适配 */
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 28px;
+            }
+            
+            .container {
+                padding: 15px 10px;
+            }
+            
+            .progress-card .display-4 {
+                font-size: 32px;
+            }
+            
+            .training-card .card-img-top {
+                height: 120px !important;
+            }
+            
+            .training-card .card-img-top span {
+                font-size: 40px !important;
+            }
+        }
+        
+        /* 横屏适配 */
+        @media (max-width: 768px) and (orientation: landscape) {
+            h1 {
+                font-size: 24px;
+                margin-top: 60px;
+            }
+            
+            .progress-card {
+                padding: 10px;
+            }
+            
+            .training-card .card-img-top {
+                height: 100px !important;
+            }
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* 全局模态框居中样式 */
+        .modal {
+            padding-right: 0 !important;
+        }
+        
+        .modal-dialog {
+            display: flex;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0 auto;
+        }
+        
+        .modal.fade .modal-dialog {
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        
+        .modal.show .modal-dialog {
+            transform: scale(1);
+        }
+        
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            width: 100%;
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            border: none;
+        }
+        
+        .btn-close-white {
+            filter: brightness(0) invert(1);
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 儿童友好提示框函数
+        function showKidModal(type, message, title) {
+            const overlay = document.getElementById('kidModalOverlay');
+            const modal = document.getElementById('kidModal');
+            const icon = document.getElementById('kidModalIcon');
+            const titleEl = document.getElementById('kidModalTitle');
+            const messageEl = document.getElementById('kidModalMessage');
+            const button = document.getElementById('kidModalButton');
+            
+            modal.className = 'kid-modal';
+            
+            switch(type) {
+                case 'success':
+                    icon.textContent = '✅';
+                    titleEl.textContent = title || '太棒啦！';
+                    button.textContent = '知道啦！';
+                    modal.classList.add('success');
+                    break;
+                case 'error':
+                    icon.textContent = '❌';
+                    titleEl.textContent = title || '哎呀！';
+                    button.textContent = '我明白了';
+                    modal.classList.add('error');
+                    break;
+                case 'warning':
+                    icon.textContent = '⚠️';
+                    titleEl.textContent = title || '注意哦！';
+                    button.textContent = '好的';
+                    modal.classList.add('warning');
+                    break;
+                case 'info':
+                    icon.textContent = '💡';
+                    titleEl.textContent = title || '提示';
+                    button.textContent = '我知道了';
+                    modal.classList.add('info');
+                    break;
+            }
+            
+            messageEl.textContent = message;
+            overlay.classList.add('show');
+        }
+        
+        function closeKidModal(event) {
+            if (event && event.target.id !== 'kidModalOverlay' && event.target.id !== 'kidModalButton') {
+                return;
+            }
+            const overlay = document.getElementById('kidModalOverlay');
+            overlay.classList.remove('show');
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initUserInfo();
+        });
+
+        // 加载用户进度
+        function loadProgress() {
+            if (!currentUserId) {
+                console.error('用户未登录');
+                return;
+            }
+            
+            fetch(`/api/report/${currentUserId}`)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'SUCCESS' && result.data) {
+                        document.getElementById('completed-count').textContent = result.data.totalTrainings || '0';
+                        document.getElementById('avg-score').textContent = (result.data.averageScore || 0).toFixed(1);
+                        
+                        // 显示进步趋势
+                        const trend = result.data.improvementTrend;
+                        if (trend === 'UPWARD') {
+                            document.getElementById('trend').textContent = '↑';
+                        } else if (trend === 'DOWNWARD') {
+                            document.getElementById('trend').textContent = '↓';
+                        } else {
+                            document.getElementById('trend').textContent = '→';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('加载进度失败:', error);
+                    // 使用默认值
+                    document.getElementById('completed-count').textContent = '0';
+                    document.getElementById('avg-score').textContent = '0.0';
+                    document.getElementById('trend').textContent = '--';
+                });
+        }
+        
+        // 加载训练记录
+        let currentRecordPage = 0;
+        const recordPageSize = 8;
+        
+        async function loadTrainingRecords(page = 0) {
+            currentRecordPage = page;
+            
+            if (!currentUserId) {
+                const tbody = document.getElementById('recordsTableBody');
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">请先登录查看训练记录</td></tr>';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/analysis/records/all?page=${page}&size=${recordPageSize}`);
+                const result = await response.json();
+                
+                if (result.status === 'SUCCESS' && result.data) {
+                    const records = result.data.records || [];
+                    const tbody = document.getElementById('recordsTableBody');
+                    tbody.innerHTML = '';
+                    
+                    if (records.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">⚠️ 暂无训练记录，开始你的第一次训练吧！</td></tr>';
+                        document.getElementById('recordsPagination').innerHTML = '';
+                        return;
+                    }
+                    
+                    const trainingTypeMap = {
+                        'ARROW_TRACKING': '箭头追踪',
+                        'NUMBER_REPETITION': '数字查找',
+                        'ANIMAL_NUMBER_MATCH': '动物匹配',
+                        'HIDDEN_OBJECT': '寻宝游戏',
+                        'NUMBER_COMPARE': '数字对比',
+                        'SCHULTZ_TABLE': '舒尔特方格',
+                        'SYMBOL_MATRIX': '符号矩阵',
+                        'NUMBER_MIGRATION': '数字迁移'
+                    };
+                    
+                    const difficultyMap = {1: '低', 2: '中', 3: '高'};
+                    
+                    records.forEach(record => {
+                        const tr = document.createElement('tr');
+                        const completedAt = new Date(record.completedAt).toLocaleString('zh-CN', {
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        const scoreClass = record.score >= 90 ? 'success' : record.score >= 70 ? 'warning' : 'danger';
+                        const difficultyClass = record.difficultyLevel === 3 ? 'danger' : record.difficultyLevel === 2 ? 'warning' : 'success';
+                        
+                        tr.innerHTML = `
+                            <td><strong>${trainingTypeMap[record.trainingType] || record.trainingType}</strong></td>
+                            <td><span class="badge bg-${difficultyClass}">${difficultyMap[record.difficultyLevel] || record.difficultyLevel}</span></td>
+                            <td><span class="badge bg-${scoreClass}" style="font-size: 14px;">${record.score ? record.score.toFixed(1) : '-'}</span></td>
+                            <td>${record.accuracyRate ? record.accuracyRate.toFixed(1) + '%' : '-'}</td>
+                            <td>${record.timeSpent || '-'}秒</td>
+                            <td><small class="text-muted">${completedAt}</small></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    
+                    // 渲染分页
+                    const totalPages = Math.ceil((result.data.total || 0) / recordPageSize);
+                    renderRecordsPagination(totalPages, page);
+                } else {
+                    throw new Error(result.message || '加载失败');
+                }
+            } catch (error) {
+                console.error('加载训练记录失败:', error);
+                const tbody = document.getElementById('recordsTableBody');
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-4">加载失败：${error.message}</td></tr>`;
+            }
+        }
+        
+        // 渲染训练记录分页
+        function renderRecordsPagination(totalPages, currentPage) {
+            const pagination = document.getElementById('recordsPagination');
+            pagination.innerHTML = '';
+            
+            if (totalPages <= 1) return;
+            
+            // 上一页
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'btn btn-sm btn-outline-secondary me-1';
+            prevBtn.textContent = '«';
+            prevBtn.disabled = currentPage === 0;
+            prevBtn.onclick = () => loadTrainingRecords(currentPage - 1);
+            pagination.appendChild(prevBtn);
+            
+            // 页码
+            const maxPages = 5;
+            let startPage = Math.max(0, currentPage - Math.floor(maxPages / 2));
+            let endPage = Math.min(totalPages, startPage + maxPages);
+            
+            if (endPage - startPage < maxPages) {
+                startPage = Math.max(0, endPage - maxPages);
+            }
+            
+            for (let i = startPage; i < endPage; i++) {
+                const btn = document.createElement('button');
+                btn.className = `btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline-primary'} me-1`;
+                btn.textContent = i + 1;
+                btn.onclick = () => loadTrainingRecords(i);
+                pagination.appendChild(btn);
+            }
+            
+            // 下一页
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'btn btn-sm btn-outline-secondary';
+            nextBtn.textContent = '»';
+            nextBtn.disabled = currentPage === totalPages - 1;
+            nextBtn.onclick = () => loadTrainingRecords(currentPage + 1);
+            pagination.appendChild(nextBtn);
+        }
+
+        // 全局变量
+        let currentUserId = null; // 当前用户ID，从session获取
+        let currentDifficulty = 1; // 当前难度：1-低 2-中 3-高
+        let currentTrainingType = null;
+        
+        // 页面加载时获取当前用户信息
+        async function initUserInfo() {
+            try {
+                const response = await fetch('/api/auth/current');
+                const result = await response.json();
+                
+                if (result.status === 'SUCCESS' && result.data) {
+                    currentUserId = result.data.userId;
+                    console.log('当前用户ID:', currentUserId);
+                    // 加载用户进度
+                    loadProgress();
+                    // 加载训练记录
+                    loadTrainingRecords(0);
+                } else {
+                    console.error('未登录或登录过期');
+                    // 可以选择跳转到登录页
+                    // window.location.href = '/login.html';
+                }
+            } catch (error) {
+                console.error('获取用户信息失败:', error);
+            }
+        }
+        
+        // 训练规则配置
+        const trainingRules = {
+            'SCHULTZ_TABLE': {
+                name: '舒尔特方格',
+                rules: '按顺序从1开始点击数字，直到所有数字被点击完毕。训练目标：提高注意力广度和视觉搜索能力。',
+                difficulty: {
+                    1: {size: 3, name: '低难度 (3x3)'},
+                    2: {size: 5, name: '中难度 (5x5)'},
+                    3: {size: 7, name: '高难度 (7x7)'}
+                },
+                scoring: '根据完成时间评分：<20秒(100分) <30秒(90分) <45秒(80分) <60秒(70分) 其他(60分)'
+            },
+            'NUMBER_COMPARE': {
+                name: '数字对比',
+                rules: '比较两个数字的大小关系，选择正确的符号（>、=、<）。训练目标：提高数字敏感度和快速判断能力。',
+                difficulty: {
+                    1: {range: 50, count: 10, name: '低难度 (0-50, 10题)'},
+                    2: {range: 100, count: 15, name: '中难度 (0-100, 15题)'},
+                    3: {range: 200, count: 20, name: '高难度 (0-200, 20题)'}
+                },
+                scoring: '根据准确率和时间：每题正确+10分，时间<1秒/题额外+20分'
+            },
+            'ARROW_TRACKING': {
+                name: '箭头追踪',
+                rules: '记住箭头序列，然后按顺序点击对应方向。训练目标：增强工作记忆和序列记忆能力。',
+                difficulty: {
+                    1: {length: 5, name: '低难度 (5步)'},
+                    2: {length: 8, name: '中难度 (8步)'},
+                    3: {length: 12, name: '高难度 (12步)'}
+                },
+                scoring: '根据错误次数和时间：0错(100分) 1-2错(85分) 3-4错(70分) >4错(60分)'
+            },
+            'NUMBER_REPETITION': {
+                name: '数字重复查找',
+                rules: '在一组数字中找出所有重复出现的数字。训练目标：提高注意力集中度和视觉辨别能力。',
+                difficulty: {
+                    1: {total: 15, repeat: 2, name: '低难度 (15个数字, 2个重复)'},
+                    2: {total: 20, repeat: 3, name: '中难度 (20个数字, 3个重复)'},
+                    3: {total: 30, repeat: 5, name: '高难度 (30个数字, 5个重复)'}
+                },
+                scoring: '全部正确(100分) 遗漑1个(-15分) 多托1个(-10分)'
+            },
+            'ANIMAL_NUMBER_MATCH': {
+                name: '动物数字匹配',
+                rules: '记住动物与数字的对应关系，然后进行匹配。训练目标：增强关联记忆和配对能力。',
+                difficulty: {
+                    1: {pairs: 4, name: '低难度 (4对)'},
+                    2: {pairs: 6, name: '中难度 (6对)'},
+                    3: {pairs: 8, name: '高难度 (8对)'}
+                },
+                scoring: '根据错误次数：0错(100分) 1-2错(85分) 3-4错(70分) >4错(60分)'
+            },
+            'HIDDEN_OBJECT': {
+                name: '寻宝游戏',
+                rules: '在网格中找到所有隐藏的物品。训练目标：提高观察力和视觉搜索效率。',
+                difficulty: {
+                    1: {grid: 6, targets: 3, name: '低难度 (6x6, 3个目标)'},
+                    2: {grid: 8, targets: 5, name: '中难度 (8x8, 5个目标)'},
+                    3: {grid: 10, targets: 8, name: '高难度 (10x10, 8个目标)'}
+                },
+                scoring: '根据错误点击次数：<5次(100分) <10次(85分) <15次(70分) 其他(60分)'
+            },
+            'SYMBOL_MATRIX': {
+                name: '符号矩阵',
+                rules: '找出矩阵中所有指定的符号。训练目标：提高视觉分辨和模式识别能力。',
+                difficulty: {
+                    1: {grid: 6, density: 0.2, name: '低难度 (6x6)'},
+                    2: {grid: 8, density: 0.15, name: '中难度 (8x8)'},
+                    3: {grid: 10, density: 0.12, name: '高难度 (10x10)'}
+                },
+                scoring: '根据准确率和时间：100%准确(100分) >90%(85分) >80%(70分) 其他(60分)'
+            },
+            'NUMBER_MIGRATION': {
+                name: '数字迁移',
+                rules: '记住数字的移动路径，然后回答最终位置。训练目标：增强空间记忆和路径追踪能力。',
+                difficulty: {
+                    1: {numbers: 3, steps: 2, name: '低难度 (3个数字, 2步)'},
+                    2: {numbers: 5, steps: 3, name: '中难度 (5个数字, 3步)'},
+                    3: {numbers: 7, steps: 4, name: '高难度 (7个数字, 4步)'}
+                },
+                scoring: '全部正确(100分) 每错一个-20分'
+            }
+        };
+        
+        // 显示训练规则和难度选择
+        function showTrainingRules(trainingType) {
+            currentTrainingType = trainingType;
+            const rules = trainingRules[trainingType];
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.id = 'rulesModal';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">${rules.name} - 训练规则</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <h6>训练规则：</h6>
+                            <p>${rules.rules}</p>
+                            <h6 class="mt-3">评分标准：</h6>
+                            <p>${rules.scoring}</p>
+                            <h6 class="mt-3">选择难度：</h6>
+                            <div class="btn-group-vertical w-100" role="group">
+                                <button type="button" class="btn btn-outline-success" onclick="selectDifficulty(1)">${rules.difficulty[1].name}</button>
+                                <button type="button" class="btn btn-outline-warning" onclick="selectDifficulty(2)">${rules.difficulty[2].name}</button>
+                                <button type="button" class="btn btn-outline-danger" onclick="selectDifficulty(3)">${rules.difficulty[3].name}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                document.body.removeChild(modal);
+            });
+        }
+        
+        // 选择难度并开始训练
+        function selectDifficulty(difficulty) {
+            currentDifficulty = difficulty;
+            bootstrap.Modal.getInstance(document.getElementById('rulesModal')).hide();
+            
+            setTimeout(() => {
+                if (currentTrainingType === 'SCHULTZ_TABLE') {
+                    startSchultzTable();
+                } else if (currentTrainingType === 'NUMBER_COMPARE') {
+                    startNumberCompare();
+                } else if (currentTrainingType === 'ARROW_TRACKING') {
+                    startArrowTracking();
+                } else if (currentTrainingType === 'NUMBER_REPETITION') {
+                    startNumberRepetition();
+                } else if (currentTrainingType === 'ANIMAL_NUMBER_MATCH') {
+                    startAnimalNumberMatch();
+                } else if (currentTrainingType === 'HIDDEN_OBJECT') {
+                    startHiddenObject();
+                } else if (currentTrainingType === 'SYMBOL_MATRIX') {
+                    startSymbolMatrix();
+                } else if (currentTrainingType === 'NUMBER_MIGRATION') {
+                    startNumberMigration();
+                }
+            }, 300);
+        }
+        
+        // 计算分数
+        function calculateScore(trainingType, timeSpent, correctCount, totalCount, errorCount) {
+            let score = 60;
+            
+            switch(trainingType) {
+                case 'SCHULTZ_TABLE':
+                    if (timeSpent < 20) score = 100;
+                    else if (timeSpent < 30) score = 90;
+                    else if (timeSpent < 45) score = 80;
+                    else if (timeSpent < 60) score = 70;
+                    break;
+                    
+                case 'NUMBER_COMPARE':
+                    score = (correctCount / totalCount) * 100;
+                    if (timeSpent / totalCount < 1) score = Math.min(100, score + 20);
+                    break;
+                    
+                case 'ARROW_TRACKING':
+                    if (errorCount === 0) score = 100;
+                    else if (errorCount <= 2) score = 85;
+                    else if (errorCount <= 4) score = 70;
+                    break;
+                    
+                case 'NUMBER_REPETITION':
+                    score = 100 - (errorCount * 15);
+                    break;
+                    
+                case 'ANIMAL_NUMBER_MATCH':
+                case 'HIDDEN_OBJECT':
+                    if (errorCount === 0) score = 100;
+                    else if (errorCount < 5) score = 100;
+                    else if (errorCount < 10) score = 85;
+                    else if (errorCount < 15) score = 70;
+                    break;
+                    
+                case 'SYMBOL_MATRIX':
+                    const accuracy = correctCount / totalCount;
+                    if (accuracy === 1.0) score = 100;
+                    else if (accuracy > 0.9) score = 85;
+                    else if (accuracy > 0.8) score = 70;
+                    break;
+                    
+                case 'NUMBER_MIGRATION':
+                    score = 100 - (errorCount * 20);
+                    break;
+            }
+            
+            return Math.max(0, Math.min(100, Math.round(score)));
+        }
+        
+        // 提交训练结果
+        function submitTrainingResult(trainingType, timeSpent, correctCount, totalCount, errorCount, answers) {
+            const score = calculateScore(trainingType, timeSpent, correctCount, totalCount, errorCount);
+            const accuracyRate = totalCount > 0 ? (correctCount / totalCount * 100) : 0;
+            
+            // 构建详细的交互数据
+            const interactionData = {
+                trainingType: trainingType,
+                difficultyLevel: currentDifficulty,
+                startTime: new Date(Date.now() - timeSpent * 1000).toISOString(),
+                endTime: new Date().toISOString(),
+                answers: answers || [],
+                timestamps: window.trainingTimestamps || []
+            };
+            
+            const data = {
+                trainingType: trainingType,
+                difficultyLevel: currentDifficulty,
+                timeSpent: timeSpent,
+                score: score,
+                correctCount: correctCount,
+                totalCount: totalCount,
+                errorCount: errorCount || 0,
+                accuracyRate: accuracyRate,
+                averageResponseTime: answers.length > 0 ? Math.floor(timeSpent * 1000 / answers.length) : 0,
+                interactionData: JSON.stringify(interactionData),
+                contentId: 1
+                // userId不需要传，后端从session获取
+            };
+            
+            fetch('/api/submit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log('提交结果:', result);
+                if (result.status === 'SUCCESS' && result.data) {
+                    // 获取分析结果
+                    return fetch('/api/analysis/training/' + result.data.recordId);
+                }
+                throw new Error('提交失败');
+            })
+            .then(response => response.json())
+            .then(analysisResult => {
+                console.log('分析结果:', analysisResult);
+                showTrainingResult(trainingType, score, timeSpent, correctCount, totalCount, errorCount, analysisResult.data);
+                loadProgress();
+                loadTrainingRecords(0); // 刷新训练记录列表
+            })
+            .catch(error => {
+                console.error('处理失败:', error);
+                showTrainingResult(trainingType, score, timeSpent, correctCount, totalCount, errorCount, null);
+            });
+        }
+        
+        // 显示训练结果
+        function showTrainingResult(trainingType, score, timeSpent, correctCount, totalCount, errorCount, analysis) {
+            const rules = trainingRules[trainingType];
+            const difficultyName = rules.difficulty[currentDifficulty].name;
+            
+            let level = '不及格';
+            if (score >= 90) level = '优秀';
+            else if (score >= 80) level = '良好';
+            else if (score >= 70) level = '中等';
+            else if (score >= 60) level = '及格';
+            
+            // 构建对比信息
+            let comparisonHTML = '';
+            if (analysis && analysis.comparison) {
+                const comp = analysis.comparison;
+                if (comp.performanceLevel !== 'first') {
+                    const scoreDiffText = comp.scoreDiff > 0 ? `<span style="color: #28a745">↑${comp.scoreDiff.toFixed(1)}</span>` 
+                                        : comp.scoreDiff < 0 ? `<span style="color: #dc3545">↓${Math.abs(comp.scoreDiff).toFixed(1)}</span>` 
+                                        : '<span>→持平</span>';
+                    comparisonHTML = `
+                        <hr>
+                        <h5>📈 与上次对比</h5>
+                        <div class="row text-start">
+                            <div class="col-6"><strong>得分变化：</strong></div>
+                            <div class="col-6">${scoreDiffText}</div>
+                            <div class="col-6"><strong>表现水平：</strong></div>
+                            <div class="col-6">${comp.performanceLevel === 'improving' ? '🚀 进步中' : comp.performanceLevel === 'declining' ? '⚠️ 需加油' : '🟢 稳定'}</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">训练完成！</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <h2 class="display-1 mb-4" style="color: ${score >= 80 ? '#28a745' : score >= 60 ? '#ffc107' : '#dc3545'}">${score}</h2>
+                            <h4 class="mb-4">等级：${level}</h4>
+                            <hr>
+                            <div class="row text-start">
+                                <div class="col-6"><strong>训练类型：</strong></div>
+                                <div class="col-6">${rules.name}</div>
+                                <div class="col-6"><strong>难度等级：</strong></div>
+                                <div class="col-6">${difficultyName}</div>
+                                <div class="col-6"><strong>用时：</strong></div>
+                                <div class="col-6">${timeSpent}秒</div>
+                                ${correctCount !== undefined ? `
+                                <div class="col-6"><strong>正确率：</strong></div>
+                                <div class="col-6">${correctCount}/${totalCount} (${Math.round(correctCount/totalCount*100)}%)</div>
+                                ` : ''}
+                                ${errorCount !== undefined ? `
+                                <div class="col-6"><strong>错误次数：</strong></div>
+                                <div class="col-6">${errorCount}次</div>
+                                ` : ''}
+                            </div>
+                            ${comparisonHTML}
+                            <hr>
+                            <p class="text-muted small">训练结果已保存，可在训练报告中查看详细分析。</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                            <button type="button" class="btn btn-primary" onclick="location.reload()">再来一次</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                document.body.removeChild(modal);
+            });
+        }
+        // 开始训练 - 先显示规则
+        function startTraining(trainingType) {
+            showTrainingRules(trainingType);
+        }
+
+        // 舒尔特方格训练
+        let schultzStartTime;
+        let schultzCurrentNumber = 1;
+        let schultzSize = 5;
+        let schultzKeyboardListener = null;
+        
+        function startSchultzTable() {
+            schultzSize = trainingRules['SCHULTZ_TABLE'].difficulty[currentDifficulty].size;
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">舒尔特方格训练</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <div class="mb-3">
+                                <span>当前目标: <strong id="currentTarget">1</strong></span>
+                                <span class="ms-4">用时: <strong id="timeElapsed">0</strong>秒</span>
+                            </div>
+                            <p class="text-muted small">💡 提示：可以使用键盘数字键（主键盘或小键盘）快速输入</p>
+                            <div id="schultzGrid" style="display: inline-block;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+            
+            generateSchultzGrid();
+            schultzStartTime = Date.now();
+            schultzCurrentNumber = 1;
+            
+            // 添加键盘监听
+            schultzKeyboardListener = function(e) {
+                const key = e.key;
+                // 支持主键盘数字键和数字小键盘
+                if ((key >= '0' && key <= '9') || (e.code && e.code.startsWith('Numpad'))) {
+                    let num;
+                    if (e.code && e.code.startsWith('Numpad')) {
+                        num = parseInt(e.code.replace('Numpad', ''));
+                    } else {
+                        num = parseInt(key);
+                    }
+                    
+                    // 查找包含该数字的格子并触发点击
+                    const cells = document.querySelectorAll('.schultz-cell');
+                    cells.forEach(cell => {
+                        if (parseInt(cell.textContent) === num) {
+                            cell.click();
+                        }
+                    });
+                }
+            };
+            document.addEventListener('keydown', schultzKeyboardListener);
+            
+            const timer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - schultzStartTime) / 1000);
+                const timeEl = document.getElementById('timeElapsed');
+                if (timeEl) {
+                    timeEl.textContent = elapsed;
+                } else {
+                    clearInterval(timer);
+                }
+            }, 100);
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                clearInterval(timer);
+                if (schultzKeyboardListener) {
+                    document.removeEventListener('keydown', schultzKeyboardListener);
+                }
+                document.body.removeChild(modal);
+            });
+        }
+        
+        function generateSchultzGrid() {
+            const grid = document.getElementById('schultzGrid');
+            const numbers = Array.from({length: schultzSize * schultzSize}, (_, i) => i + 1);
+            
+            // 随机打乱
+            for (let i = numbers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+            }
+            
+            let html = '<div style="display: grid; grid-template-columns: repeat(' + schultzSize + ', 80px); gap: 5px;">';
+            numbers.forEach(num => {
+                html += `<div class="schultz-cell" onclick="clickSchultzCell(${num})" 
+                    style="width: 80px; height: 80px; border: 2px solid #007bff; border-radius: 8px; 
+                    display: flex; align-items: center; justify-content: center; font-size: 24px; 
+                    font-weight: bold; cursor: pointer; background: white; transition: all 0.2s;"
+                    onmouseover="this.style.background='#e7f3ff'" onmouseout="this.style.background='white'">
+                    ${num}
+                </div>`;
+            });
+            html += '</div>';
+            grid.innerHTML = html;
+        }
+        
+        function clickSchultzCell(num) {
+            if (num === schultzCurrentNumber) {
+                schultzCurrentNumber++;
+                document.getElementById('currentTarget').textContent = schultzCurrentNumber;
+                
+                // 点击正确，变绿
+                event.target.style.background = '#d4edda';
+                event.target.style.borderColor = '#28a745';
+                event.target.style.pointerEvents = 'none';
+                
+                if (schultzCurrentNumber > schultzSize * schultzSize) {
+                    const totalTime = Math.floor((Date.now() - schultzStartTime) / 1000);
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(event.target.closest('.modal')).hide();
+                        setTimeout(() => {
+                            submitTrainingResult('SCHULTZ_TABLE', totalTime, schultzSize * schultzSize, schultzSize * schultzSize, 0, [totalTime.toString()]);
+                        }, 300);
+                    }, 300);
+                }
+            } else {
+                // 点击错误，变红并震动
+                const cell = event.target;
+                cell.style.background = '#f8d7da';
+                cell.style.animation = 'shake 0.3s';
+                setTimeout(() => {
+                    cell.style.background = 'white';
+                    cell.style.animation = '';
+                }, 300);
+            }
+        }
+        
+        // 数字对比训练
+        let compareScore = 0;
+        let compareCount = 0;
+        let compareTotal = 10;
+        let compareStartTime;
+        let compareKeyboardListener = null;
+        
+        function startNumberCompare() {
+            const config = trainingRules['NUMBER_COMPARE'].difficulty[currentDifficulty];
+            compareTotal = config.count;
+            compareScore = 0;
+            compareCount = 0;
+            compareStartTime = Date.now();
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">数字对比训练</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <div class="mb-3">
+                                <span>题目: <strong id="compareProgress">1/10</strong></span>
+                                <span class="ms-4">得分: <strong id="compareScore">0</strong></span>
+                            </div>
+                            <p class="text-muted small">💡 提示：按 1(大于) 2(等于) 3(小于) 快速回答（支持小键盘）</p>
+                            <div id="compareContent" style="min-height: 200px; display: flex; flex-direction: column; justify-content: center;">
+                                <div id="compareNumbers" style="font-size: 48px; font-weight: bold; margin: 30px 0;"></div>
+                                <div id="compareButtons" class="mt-4">
+                                    <button class="btn btn-primary btn-lg me-3" onclick="answerCompare('greater')" style="width: 120px;">&gt; 大于 (1)</button>
+                                    <button class="btn btn-success btn-lg me-3" onclick="answerCompare('equal')" style="width: 120px;">= 等于 (2)</button>
+                                    <button class="btn btn-warning btn-lg" onclick="answerCompare('less')" style="width: 120px;">&lt; 小于 (3)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+            
+            // 添加键盘监听
+            compareKeyboardListener = function(e) {
+                const key = e.key;
+                // 支持主键盘和数字小键盘
+                if (key === '1' || e.code === 'Numpad1') {
+                    answerCompare('greater');
+                } else if (key === '2' || e.code === 'Numpad2') {
+                    answerCompare('equal');
+                } else if (key === '3' || e.code === 'Numpad3') {
+                    answerCompare('less');
+                }
+            };
+            document.addEventListener('keydown', compareKeyboardListener);
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                if (compareKeyboardListener) {
+                    document.removeEventListener('keydown', compareKeyboardListener);
+                }
+                document.body.removeChild(modal);
+            });
+            
+            nextCompareQuestion();
+        }
+        
+        function nextCompareQuestion() {
+            const config = trainingRules['NUMBER_COMPARE'].difficulty[currentDifficulty];
+            const num1 = Math.floor(Math.random() * config.range);
+            const num2 = Math.floor(Math.random() * config.range);
+            
+            document.getElementById('compareNumbers').innerHTML = `${num1} <span style="color: #999;">和</span> ${num2}`;
+            document.getElementById('compareNumbers').dataset.num1 = num1;
+            document.getElementById('compareNumbers').dataset.num2 = num2;
+        }
+        
+        function answerCompare(answer) {
+            const num1 = parseInt(document.getElementById('compareNumbers').dataset.num1);
+            const num2 = parseInt(document.getElementById('compareNumbers').dataset.num2);
+            
+            let correct = false;
+            if (answer === 'greater' && num1 > num2) correct = true;
+            if (answer === 'equal' && num1 === num2) correct = true;
+            if (answer === 'less' && num1 < num2) correct = true;
+            
+            if (correct) {
+                compareScore++;
+                document.getElementById('compareScore').textContent = compareScore;
+            }
+            
+            compareCount++;
+            document.getElementById('compareProgress').textContent = `${compareCount + 1}/${compareTotal}`;
+            
+            if (compareCount >= compareTotal) {
+                const totalTime = Math.floor((Date.now() - compareStartTime) / 1000);
+                setTimeout(() => {
+                    bootstrap.Modal.getInstance(document.querySelector('.modal.show')).hide();
+                    setTimeout(() => {
+                        submitTrainingResult('NUMBER_COMPARE', totalTime, compareScore, compareTotal, compareTotal - compareScore, []);
+                    }, 300);
+                }, 200);
+            } else {
+                nextCompareQuestion();
+            }
+        }
+        
+        // 箭头追踪训练
+        let arrowPath = [];
+        let arrowCurrentStep = 0;
+        let arrowStartTime;
+        let arrowErrors = 0;
+        let arrowKeyboardListener = null;
+        
+        function startArrowTracking() {
+            const config = trainingRules['ARROW_TRACKING'].difficulty[currentDifficulty];
+            arrowCurrentStep = 0;
+            arrowErrors = 0;
+            arrowStartTime = Date.now();
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">箭头追踪训练</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <div class="mb-3">
+                                <span>进度: <strong id="arrowProgress">0/8</strong></span>
+                                <span class="ms-4">用时: <strong id="arrowTime">0</strong>秒</span>
+                            </div>
+                            <p class="text-muted small">💡 提示：使用键盘箭头键 ↑↓←→ 或 WASD</p>
+                            <div id="arrowGrid" style="display: inline-block;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+            
+            // 添加键盘监听
+            arrowKeyboardListener = function(e) {
+                e.preventDefault();
+                let direction = null;
+                if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') direction = '↑';
+                else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') direction = '↓';
+                else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') direction = '←';
+                else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') direction = '→';
+                
+                if (direction) {
+                    clickArrow(direction);
+                }
+            };
+            document.addEventListener('keydown', arrowKeyboardListener);
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                if (arrowKeyboardListener) {
+                    document.removeEventListener('keydown', arrowKeyboardListener);
+                }
+                document.body.removeChild(modal);
+            });
+            
+            generateArrowPath();
+            
+            const timer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - arrowStartTime) / 1000);
+                const timeEl = document.getElementById('arrowTime');
+                if (timeEl) {
+                    timeEl.textContent = elapsed;
+                } else {
+                    clearInterval(timer);
+                }
+            }, 100);
+        }
+        
+        function generateArrowPath() {
+            const config = trainingRules['ARROW_TRACKING'].difficulty[currentDifficulty];
+            const directions = ['↑', '→', '↓', '←'];
+            const pathLength = config.length;
+            arrowPath = [];
+            
+            for (let i = 0; i < pathLength; i++) {
+                arrowPath.push(directions[Math.floor(Math.random() * directions.length)]);
+            }
+            
+            const grid = document.getElementById('arrowGrid');
+            let html = '<div class="mb-4" style="font-size: 64px; letter-spacing: 20px;">';
+            arrowPath.forEach((arrow, i) => {
+                html += `<span id="arrow${i}" style="color: #ccc;">${arrow}</span>`;
+            });
+            html += '</div>';
+            
+            html += '<div style="display: grid; grid-template-columns: repeat(3, 100px); gap: 10px; justify-content: center;">';
+            html += '<div></div>';
+            html += `<button class="btn btn-outline-primary" onclick="clickArrow('↑')" style="height: 80px; font-size: 32px;">↑</button>`;
+            html += '<div></div>';
+            html += `<button class="btn btn-outline-primary" onclick="clickArrow('←')" style="height: 80px; font-size: 32px;">←</button>`;
+            html += `<button class="btn btn-outline-primary" onclick="clickArrow('↓')" style="height: 80px; font-size: 32px;">↓</button>`;
+            html += `<button class="btn btn-outline-primary" onclick="clickArrow('→')" style="height: 80px; font-size: 32px;">→</button>`;
+            html += '</div>';
+            
+            grid.innerHTML = html;
+        }
+        
+        function clickArrow(direction) {
+            if (arrowCurrentStep >= arrowPath.length) return;
+            
+            const arrowEl = document.getElementById('arrow' + arrowCurrentStep);
+            
+            if (arrowPath[arrowCurrentStep] === direction) {
+                arrowEl.style.color = '#28a745';
+                arrowCurrentStep++;
+                document.getElementById('arrowProgress').textContent = `${arrowCurrentStep}/${arrowPath.length}`;
+                
+                if (arrowCurrentStep >= arrowPath.length) {
+                    const totalTime = Math.floor((Date.now() - arrowStartTime) / 1000);
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(document.querySelector('.modal.show')).hide();
+                        setTimeout(() => {
+                            submitTrainingResult('ARROW_TRACKING', totalTime, arrowPath.length, arrowPath.length, arrowErrors, []);
+                        }, 300);
+                    }, 300);
+                }
+            } else {
+                arrowErrors++;
+                arrowEl.style.color = '#dc3545';
+                setTimeout(() => {
+                    arrowEl.style.color = '#ccc';
+                }, 500);
+            }
+        }
+        
+        // 数字重复查找训练
+        let repetitionNumbers = [];
+        let repetitionAnswer = [];
+        let repetitionStartTime;
+        let repetitionKeyboardListener = null;
+        
+        function startNumberRepetition() {
+            const config = trainingRules['NUMBER_REPETITION'].difficulty[currentDifficulty];
+            repetitionStartTime = Date.now();
+            
+            repetitionNumbers = [];
+            repetitionAnswer = [];
+            const uniqueNums = [];
+            
+            const uniqueCount = config.total - config.repeat * 2;
+            for (let i = 0; i < uniqueCount; i++) {
+                uniqueNums.push(Math.floor(Math.random() * 90) + 10);
+            }
+            
+            const repeatNums = [];
+            for (let i = 0; i < config.repeat; i++) {
+                const num = Math.floor(Math.random() * 90) + 10;
+                repeatNums.push(num);
+                repetitionNumbers.push(num, num);
+                repetitionAnswer.push(num);
+            }
+            
+            repetitionNumbers = [...uniqueNums, ...repetitionNumbers];
+            repetitionAnswer.sort((a, b) => a - b);
+            
+            for (let i = repetitionNumbers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [repetitionNumbers[i], repetitionNumbers[j]] = [repetitionNumbers[j], repetitionNumbers[i]];
+            }
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">数字重复查找</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <p class="text-muted">找出下列数字中重复出现的所有数字</p>
+                            <div id="numberDisplay" class="mb-4" style="font-size: 20px; line-height: 2;">
+                                ${repetitionNumbers.join('  ')}
+                            </div>
+                            <div class="mb-3">
+                                <input type="text" id="repetitionInput" class="form-control" placeholder="输入重复的数字，用逗号分隔，如：12,34,56" style="max-width: 400px; margin: 0 auto;">
+                                <p class="text-muted small mt-2">💡 提示：按 Enter 键提交答案</p>
+                            </div>
+                            <button class="btn btn-primary" onclick="submitRepetition()">提交</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+            
+            // 添加键盘监听
+            repetitionKeyboardListener = function(e) {
+                if (e.key === 'Enter') {
+                    submitRepetition();
+                }
+            };
+            document.addEventListener('keydown', repetitionKeyboardListener);
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                if (repetitionKeyboardListener) {
+                    document.removeEventListener('keydown', repetitionKeyboardListener);
+                }
+                document.body.removeChild(modal);
+            });
+        }
+        
+        function submitRepetition() {
+            const input = document.getElementById('repetitionInput').value;
+            const userAnswer = input.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n)).sort((a, b) => a - b);
+            
+            const correct = JSON.stringify(userAnswer) === JSON.stringify(repetitionAnswer);
+            const totalTime = Math.floor((Date.now() - repetitionStartTime) / 1000);
+            const errorCount = repetitionAnswer.filter(n => !userAnswer.includes(n)).length + userAnswer.filter(n => !repetitionAnswer.includes(n)).length;
+            
+            bootstrap.Modal.getInstance(document.querySelector('.modal.show')).hide();
+            setTimeout(() => {
+                submitTrainingResult('NUMBER_REPETITION', totalTime, correct ? repetitionAnswer.length : repetitionAnswer.length - errorCount, repetitionAnswer.length, errorCount, userAnswer.map(String));
+            }, 300);
+        }
+        
+        // 动物数字匹配训练
+        let animalPairs = [];
+        let animalStartTime;
+        let animalSelected = null;
+        let animalMatched = [];
+        let animalErrors = 0;
+        
+        function startAnimalNumberMatch() {
+            const config = trainingRules['ANIMAL_NUMBER_MATCH'].difficulty[currentDifficulty];
+            animalStartTime = Date.now();
+            animalMatched = [];
+            animalErrors = 0;
+            
+            const animals = ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐯'];
+            animalPairs = animals.slice(0, config.pairs).map((a, i) => ({animal: a, number: i + 1}));
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">动物数字匹配</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <p class="text-muted">记住对应关系，然后点击匹配</p>
+                            <div id="animalPairs" class="mb-4"></div>
+                            <button class="btn btn-primary" onclick="startAnimalMatch()">开始匹配</button>
+                            <div id="animalMatch" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                document.body.removeChild(modal);
+            });
+            
+            showAnimalPairs();
+        }
+        
+        function showAnimalPairs() {
+            let html = '<div style="font-size: 48px;">';
+            animalPairs.forEach(p => {
+                html += `<div class="mb-2">${p.animal} = ${p.number}</div>`;
+            });
+            html += '</div>';
+            document.getElementById('animalPairs').innerHTML = html;
+        }
+        
+        function startAnimalMatch() {
+            document.getElementById('animalPairs').style.display = 'none';
+            document.querySelector('[onclick="startAnimalMatch()"]').style.display = 'none';
+            document.getElementById('animalMatch').style.display = 'block';
+            
+            const animals = animalPairs.map(p => p.animal);
+            const numbers = animalPairs.map(p => p.number);
+            
+            // 打乱
+            for (let i = numbers.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+            }
+            
+            let html = '<div class="row">';
+            html += '<div class="col-6">';
+            animals.forEach((a, i) => {
+                html += `<div class="btn btn-outline-primary btn-lg m-2" onclick="selectAnimal('animal', ${i})" id="animal${i}" style="width: 100px; height: 100px; font-size: 48px;">${a}</div>`;
+            });
+            html += '</div>';
+            html += '<div class="col-6">';
+            numbers.forEach((n, i) => {
+                html += `<div class="btn btn-outline-success btn-lg m-2" onclick="selectAnimal('number', ${i})" id="number${i}" data-value="${n}" style="width: 100px; height: 100px; font-size: 32px;">${n}</div>`;
+            });
+            html += '</div></div>';
+            
+            document.getElementById('animalMatch').innerHTML = html;
+        }
+        
+        function selectAnimal(type, index) {
+            if (animalSelected === null) {
+                animalSelected = {type, index};
+                document.getElementById(type + index).style.background = '#fff3cd';
+            } else {
+                if (animalSelected.type === type) {
+                    document.getElementById(animalSelected.type + animalSelected.index).style.background = '';
+                    animalSelected = {type, index};
+                    document.getElementById(type + index).style.background = '#fff3cd';
+                } else {
+                    const animalIdx = animalSelected.type === 'animal' ? animalSelected.index : index;
+                    const numberIdx = animalSelected.type === 'number' ? animalSelected.index : index;
+                    
+                    const numberValue = parseInt(document.getElementById('number' + numberIdx).dataset.value);
+                    const correctNumber = animalPairs[animalIdx].number;
+                    
+                    if (numberValue === correctNumber) {
+                        document.getElementById('animal' + animalIdx).style.background = '#d4edda';
+                        document.getElementById('number' + numberIdx).style.background = '#d4edda';
+                        document.getElementById('animal' + animalIdx).style.pointerEvents = 'none';
+                        document.getElementById('number' + numberIdx).style.pointerEvents = 'none';
+                        animalMatched.push(animalIdx);
+                        
+                        if (animalMatched.length === animalPairs.length) {
+                            const totalTime = Math.floor((Date.now() - animalStartTime) / 1000);
+                            setTimeout(() => {
+                                bootstrap.Modal.getInstance(document.querySelector('.modal.show')).hide();
+                                setTimeout(() => {
+                                    submitTrainingResult('ANIMAL_NUMBER_MATCH', totalTime, animalPairs.length, animalPairs.length, animalErrors, []);
+                                }, 300);
+                            }, 300);
+                        }
+                    } else {
+                        animalErrors++;
+                        document.getElementById('animal' + animalIdx).style.background = '#f8d7da';
+                        document.getElementById('number' + numberIdx).style.background = '#f8d7da';
+                        setTimeout(() => {
+                            document.getElementById('animal' + animalIdx).style.background = '';
+                            document.getElementById('number' + numberIdx).style.background = '';
+                        }, 500);
+                    }
+                    
+                    document.getElementById(animalSelected.type + animalSelected.index).style.background = '';
+                    animalSelected = null;
+                }
+            }
+        }
+        
+        // 寻宝游戏训练
+        let hiddenTargets = [];
+        let hiddenFound = [];
+        let hiddenStartTime;
+        let hiddenErrors = 0;
+        let hiddenGridSize = 8;
+        let hiddenTargetCount = 5;
+        
+        function startHiddenObject() {
+            const config = trainingRules['HIDDEN_OBJECT'].difficulty[currentDifficulty];
+            hiddenGridSize = config.grid;
+            hiddenTargetCount = config.targets;
+            hiddenFound = [];
+            hiddenErrors = 0;
+            hiddenStartTime = Date.now();
+            
+            const objects = ['⭐', '❤️', '💎', '🎁', '🎉'];
+            hiddenTargets = objects.slice(0, 5);
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">寻宝游戏</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <div class="mb-3">
+                                <span>找到: <strong id="hiddenCount">0/${hiddenTargetCount}</strong></span>
+                            </div>
+                            <div id="hiddenGrid" style="display: inline-block;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                document.body.removeChild(modal);
+            });
+            
+            generateHiddenGrid();
+        }
+        
+        function generateHiddenGrid() {
+            const grid = [];
+            const totalCells = hiddenGridSize * hiddenGridSize;
+            for (let i = 0; i < totalCells; i++) {
+                grid.push({hasObject: false, object: null});
+            }
+            
+            const objects = ['⭐', '❤️', '💎', '🎁', '🎉', '🎈', '🎂', '🎀'];
+            hiddenTargets = objects.slice(0, hiddenTargetCount);
+            
+            const positions = [];
+            while (positions.length < hiddenTargetCount) {
+                const pos = Math.floor(Math.random() * totalCells);
+                if (!positions.includes(pos)) {
+                    positions.push(pos);
+                    grid[pos] = {hasObject: true, object: hiddenTargets[positions.length - 1]};
+                }
+            }
+            
+            let html = `<div style="display: grid; grid-template-columns: repeat(${hiddenGridSize}, 60px); gap: 5px;">`;
+            grid.forEach((cell, i) => {
+                html += `<div onclick="clickHiddenCell(${i})" id="hidden${i}" 
+                    style="width: 60px; height: 60px; background: #e9ecef; border-radius: 8px; 
+                    display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 32px;"
+                    data-has-object="${cell.hasObject}" data-object="${cell.object || ''}"></div>`;
+            });
+            html += '</div>';
+            
+            document.getElementById('hiddenGrid').innerHTML = html;
+        }
+        
+        function clickHiddenCell(index) {
+            const cell = document.getElementById('hidden' + index);
+            const hasObject = cell.dataset.hasObject === 'true';
+            
+            if (hasObject && !hiddenFound.includes(index)) {
+                cell.textContent = cell.dataset.object;
+                cell.style.background = '#d4edda';
+                hiddenFound.push(index);
+                document.getElementById('hiddenCount').textContent = `${hiddenFound.length}/${hiddenTargetCount}`;
+                
+                if (hiddenFound.length === hiddenTargetCount) {
+                    const totalTime = Math.floor((Date.now() - hiddenStartTime) / 1000);
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(document.querySelector('.modal.show')).hide();
+                        setTimeout(() => {
+                            submitTrainingResult('HIDDEN_OBJECT', totalTime, hiddenTargetCount, hiddenTargetCount, hiddenErrors, []);
+                        }, 300);
+                    }, 300);
+                }
+            } else if (!hiddenFound.includes(index)) {
+                hiddenErrors++;
+                cell.style.background = '#f8d7da';
+                setTimeout(() => {
+                    cell.style.background = '#e9ecef';
+                }, 300);
+            }
+        }
+        
+        // 符号矩阵训练
+        let symbolPattern = [];
+        let symbolStartTime;
+        let symbolGridSize = 8;
+        let symbolErrors = 0;
+        
+        function startSymbolMatrix() {
+            const config = trainingRules['SYMBOL_MATRIX'].difficulty[currentDifficulty];
+            symbolGridSize = config.grid;
+            symbolErrors = 0;
+            symbolStartTime = Date.now();
+            
+            const symbols = ['★', '●', '■', '▲', '♦'];
+            const patternSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">符号矩阵</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <p>找出所有的 <span style="font-size: 32px;">${patternSymbol}</span></p>
+                            <div class="mb-3">
+                                <span>找到: <strong id="symbolCount">0</strong></span>
+                            </div>
+                            <div id="symbolGrid" style="display: inline-block;"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                document.body.removeChild(modal);
+            });
+            
+            generateSymbolGrid(symbols, patternSymbol);
+        }
+        
+        function generateSymbolGrid(symbols, patternSymbol) {
+            const config = trainingRules['SYMBOL_MATRIX'].difficulty[currentDifficulty];
+            const grid = [];
+            symbolPattern = [];
+            const totalCells = symbolGridSize * symbolGridSize;
+            
+            for (let i = 0; i < totalCells; i++) {
+                if (Math.random() < config.density) {
+                    grid.push(patternSymbol);
+                    symbolPattern.push(i);
+                } else {
+                    const otherSymbols = symbols.filter(s => s !== patternSymbol);
+                    grid.push(otherSymbols[Math.floor(Math.random() * otherSymbols.length)]);
+                }
+            }
+            
+            let html = `<div style="display: grid; grid-template-columns: repeat(${symbolGridSize}, 60px); gap: 5px;">`;
+            grid.forEach((symbol, i) => {
+                html += `<div onclick="clickSymbolCell(${i})" id="symbol${i}" 
+                    style="width: 60px; height: 60px; background: white; border: 2px solid #ddd; border-radius: 8px; 
+                    display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 28px;"
+                    data-symbol="${symbol}">${symbol}</div>`;
+            });
+            html += '</div>';
+            
+            document.getElementById('symbolGrid').innerHTML = html;
+        }
+        
+        let symbolFound = [];
+        function clickSymbolCell(index) {
+            const cell = document.getElementById('symbol' + index);
+            
+            if (symbolPattern.includes(index) && !symbolFound.includes(index)) {
+                cell.style.background = '#d4edda';
+                cell.style.borderColor = '#28a745';
+                symbolFound.push(index);
+                document.getElementById('symbolCount').textContent = symbolFound.length;
+                
+                if (symbolFound.length === symbolPattern.length) {
+                    const totalTime = Math.floor((Date.now() - symbolStartTime) / 1000);
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(document.querySelector('.modal.show')).hide();
+                        setTimeout(() => {
+                            submitTrainingResult('SYMBOL_MATRIX', totalTime, symbolPattern.length, symbolPattern.length, symbolErrors, []);
+                        }, 300);
+                    }, 300);
+                }
+            } else if (!symbolFound.includes(index)) {
+                symbolErrors++;
+                cell.style.background = '#f8d7da';
+                setTimeout(() => {
+                    cell.style.background = 'white';
+                }, 300);
+            }
+        }
+        
+        // 数字迁移训练
+        let migrationSequence = [];
+        let migrationStep = 0;
+        let migrationStartTime;
+        let migrationShowPhase = true;
+        let migrationErrors = 0;
+        let migrationKeyboardListener = null;
+        
+        function startNumberMigration() {
+            const config = trainingRules['NUMBER_MIGRATION'].difficulty[currentDifficulty];
+            migrationStep = 0;
+            migrationErrors = 0;
+            migrationStartTime = Date.now();
+            migrationShowPhase = true;
+            
+            migrationSequence = [];
+            for (let i = 0; i < config.numbers; i++) {
+                const num = Math.floor(Math.random() * 9) + 1;
+                const positions = [];
+                let pos = Math.floor(Math.random() * 9);
+                positions.push(pos);
+                
+                for (let j = 0; j < config.steps; j++) {
+                    const validMoves = [];
+                    const row = Math.floor(pos / 3);
+                    const col = pos % 3;
+                    if (row > 0) validMoves.push(pos - 3);
+                    if (row < 2) validMoves.push(pos + 3);
+                    if (col > 0) validMoves.push(pos - 1);
+                    if (col < 2) validMoves.push(pos + 1);
+                    pos = validMoves[Math.floor(Math.random() * validMoves.length)];
+                    positions.push(pos);
+                }
+                
+                migrationSequence.push({num, positions});
+            }
+            
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">数字迁移训练</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            <div id="migrationContent"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            
+            const modalInstance = new bootstrap.Modal(modal);
+            modalInstance.show();
+            
+            modal.addEventListener('hidden.bs.modal', () => {
+                document.body.removeChild(modal);
+            });
+            
+            showMigrationSequence();
+        }
+        
+        function showMigrationSequence() {
+            let html = '<p class="text-muted">记住每个数字的移动路径</p>';
+            html += '<div id="migrationDisplay" style="font-size: 18px;"></div>';
+            html += '<button class="btn btn-primary mt-3" onclick="startMigrationTest()">开始答题</button>';
+            
+            document.getElementById('migrationContent').innerHTML = html;
+            
+            let displayText = '';
+            migrationSequence.forEach((seq, i) => {
+                let path = seq.positions.join(' → ');
+                displayText += `数字 ${seq.num}: ${path}<br>`;
+            });
+            
+            document.getElementById('migrationDisplay').innerHTML = displayText;
+        }
+        
+        function startMigrationTest() {
+            migrationShowPhase = false;
+            migrationStep = 0;
+            const config = trainingRules['NUMBER_MIGRATION'].difficulty[currentDifficulty];
+            
+            let html = '<p>数字 <strong id="migrationCurrentNum">' + migrationSequence[0].num + '</strong> 的最终位置是？</p>';
+            html += '<p class="text-muted small">💡 提示：使用键盘数字键 0-8 选择位置（支持小键盘）</p>';
+            html += '<div style="display: grid; grid-template-columns: repeat(3, 80px); gap: 10px; justify-content: center;">';
+            for (let i = 0; i < 9; i++) {
+                html += `<button class="btn btn-outline-primary" onclick="answerMigration(${i})" style="height: 80px; font-size: 24px;">${i}</button>`;
+            }
+            html += '</div>';
+            html += `<div class="mt-3"><span>进度: <strong id="migrationProgress">1/${config.numbers}</strong></span></div>`;
+            
+            document.getElementById('migrationContent').innerHTML = html;
+            
+            // 添加键盘监听
+            migrationKeyboardListener = function(e) {
+                const key = e.key;
+                let num = -1;
+                
+                // 支持主键盘和数字小键盘
+                if (key >= '0' && key <= '8') {
+                    num = parseInt(key);
+                } else if (e.code && e.code.startsWith('Numpad') && e.code !== 'NumpadDecimal') {
+                    const numpadNum = parseInt(e.code.replace('Numpad', ''));
+                    if (numpadNum >= 0 && numpadNum <= 8) {
+                        num = numpadNum;
+                    }
+                }
+                
+                if (num >= 0 && num <= 8) {
+                    answerMigration(num);
+                }
+            };
+            document.addEventListener('keydown', migrationKeyboardListener);
+        }
+        
+        function answerMigration(position) {
+            const config = trainingRules['NUMBER_MIGRATION'].difficulty[currentDifficulty];
+            const correctPos = migrationSequence[migrationStep].positions[config.steps];
+            
+            if (position === correctPos) {
+                migrationStep++;
+                
+                if (migrationStep >= migrationSequence.length) {
+                    const totalTime = Math.floor((Date.now() - migrationStartTime) / 1000);
+                    if (migrationKeyboardListener) {
+                        document.removeEventListener('keydown', migrationKeyboardListener);
+                    }
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(document.querySelector('.modal.show')).hide();
+                        setTimeout(() => {
+                            submitTrainingResult('NUMBER_MIGRATION', totalTime, migrationSequence.length - migrationErrors, migrationSequence.length, migrationErrors, []);
+                        }, 300);
+                    }, 200);
+                } else {
+                    document.getElementById('migrationCurrentNum').textContent = migrationSequence[migrationStep].num;
+                    document.getElementById('migrationProgress').textContent = `${migrationStep + 1}/${config.numbers}`;
+                }
+            } else {
+                migrationErrors++;
+                showKidModal('error', '哎呀！正确答案是位置 ' + correctPos + ' 哦！', '再试一次！');
+            }
+        }
+
+        // 检查登录状态
+        async function checkLogin() {
+            try {
+                const response = await fetch('/api/auth/current');
+                const data = await response.json();
+                
+                if (data.status === 'SUCCESS') {
+                    document.getElementById('currentUser').textContent = data.data.username;
+                    document.getElementById('logoutBtn').style.display = 'inline-block';
+                } else {
+                    // 未登录，跳转登录页
+                    window.location.href = '/login.html';
+                }
+            } catch (error) {
+                window.location.href = '/login.html';
+            }
+        }
+
+        // 退出登录
+        async function logout() {
+            try {
+                await fetch('/api/auth/logout', {method: 'POST'});
+                window.location.href = '/login.html';
+            } catch (error) {
+                window.location.href = '/login.html';
+            }
+        }
+
+        // 页面加载时检查登录
+        window.onload = function() {
+            checkLogin();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 专注力训练系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0a0e27;
+            background-image: url('https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?q=80&w=2071&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* 背景蒙层，提高表单可读性 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 14, 39, 0.3);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .login-container {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.5), 0 0 30px rgba(102, 126, 234, 0.2);
+            width: 400px;
+            max-width: 90%;
+            position: relative;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .login-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 10px;
+            width: 100%;
+            margin-top: 10px;
+        }
+        .btn-login:hover {
+            opacity: 0.9;
+        }
+        .form-control {
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 16px;
+        }
+        .switch-mode {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+        .switch-mode a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        /* 验证码样式 */
+        .captcha-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .captcha-input {
+            flex: 1;
+        }
+        
+        .captcha-img {
+            height: 48px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .captcha-img:hover {
+            transform: scale(1.05);
+        }
+        
+        .captcha-refresh {
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .captcha-refresh:hover {
+            transform: rotate(180deg);
+        }
+        
+        /* 儿童友好提示框样式 */
+        .kid-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .kid-modal-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .kid-modal {
+            background: white;
+            border-radius: 25px;
+            padding: 35px;
+            max-width: 90%;
+            width: 420px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+            animation: bounceIn 0.5s ease;
+            text-align: center;
+        }
+        
+        .kid-modal-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+            animation: pulse 1s infinite;
+        }
+        
+        .kid-modal-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .kid-modal-message {
+            font-size: 20px;
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 25px;
+        }
+        
+        .kid-modal-button {
+            padding: 12px 40px;
+            font-size: 20px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .kid-modal-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .kid-modal-button:active {
+            transform: translateY(0);
+        }
+        
+        /* 不同类型的颜色 */
+        .kid-modal.success .kid-modal-title { color: #28a745; }
+        .kid-modal.success .kid-modal-button { 
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .kid-modal.error .kid-modal-title { color: #dc3545; }
+        .kid-modal.error .kid-modal-button { 
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+            color: white;
+        }
+        
+        .kid-modal.warning .kid-modal-title { color: #ffc107; }
+        .kid-modal.warning .kid-modal-button { 
+            background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+            color: white;
+        }
+        
+        .kid-modal.info .kid-modal-title { color: #17a2b8; }
+        .kid-modal.info .kid-modal-button { 
+            background: linear-gradient(135deg, #17a2b8 0%, #007bff 100%);
+            color: white;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px;
+            }
+            
+            .login-container {
+                padding: 30px 20px;
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .login-title {
+                font-size: 28px;
+            }
+            
+            .form-control {
+                padding: 10px;
+                font-size: 15px;
+            }
+            
+            .btn-login {
+                padding: 10px;
+                font-size: 16px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 25px 15px;
+            }
+            
+            .login-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 儿童友好提示框 -->
+    <div id="kidModalOverlay" class="kid-modal-overlay" onclick="closeKidModal(event)">
+        <div class="kid-modal" id="kidModal">
+            <div class="kid-modal-icon" id="kidModalIcon"></div>
+            <div class="kid-modal-title" id="kidModalTitle"></div>
+            <div class="kid-modal-message" id="kidModalMessage"></div>
+            <button class="kid-modal-button" id="kidModalButton" onclick="closeKidModal()"></button>
+        </div>
+    </div>
+    
+    <div class="login-container">
+        <div class="login-title">🎯 专注力训练系统</div>
+        
+        <!-- 登录表单 -->
+        <div id="loginForm">
+            <div class="mb-3">
+                <label class="form-label">用户名</label>
+                <input type="text" class="form-control" id="loginUsername" placeholder="请输入用户名">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">密码</label>
+                <input type="password" class="form-control" id="loginPassword" placeholder="请输入密码">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">验证码</label>
+                <div class="captcha-container">
+                    <input type="text" class="form-control captcha-input" id="loginCaptcha" placeholder="请输入验证码" maxlength="6">
+                    <img id="loginCaptchaImg" class="captcha-img" src="" alt="验证码" onclick="refreshLoginCaptcha()">
+                    <button type="button" class="btn btn-sm btn-outline-secondary captcha-refresh" onclick="refreshLoginCaptcha()" title="刷新验证码">
+                        🔄
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-login" onclick="login()">登录</button>
+            <div class="switch-mode">
+                还没有账号？<a href="#" onclick="showRegister()">立即注册</a>
+            </div>
+        </div>
+
+        <!-- 注册表单 -->
+        <div id="registerForm" style="display: none;">
+            <div class="mb-3">
+                <label class="form-label">用户名</label>
+                <input type="text" class="form-control" id="registerUsername" placeholder="请输入用户名">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">密码</label>
+                <input type="password" class="form-control" id="registerPassword" placeholder="请输入密码">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">性别 <span class="text-danger">*</span></label>
+                <select class="form-control" id="registerGender">
+                    <option value="">请选择性别</option>
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">年龄 <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" id="registerAge" placeholder="请输入年龄" min="1" max="120">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">邮箱（可选）</label>
+                <input type="email" class="form-control" id="registerEmail" placeholder="请输入邮箱">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">验证码</label>
+                <div class="captcha-container">
+                    <input type="text" class="form-control captcha-input" id="registerCaptcha" placeholder="请输入验证码" maxlength="6">
+                    <img id="registerCaptchaImg" class="captcha-img" src="" alt="验证码" onclick="refreshRegisterCaptcha()">
+                    <button type="button" class="btn btn-sm btn-outline-secondary captcha-refresh" onclick="refreshRegisterCaptcha()" title="刷新验证码">
+                        🔄
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-login" onclick="register()">注册</button>
+            <div class="switch-mode">
+                已有账号？<a href="#" onclick="showLogin()">立即登录</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 儿童友好提示框函数
+        function showKidModal(type, message, title) {
+            const overlay = document.getElementById('kidModalOverlay');
+            const modal = document.getElementById('kidModal');
+            const icon = document.getElementById('kidModalIcon');
+            const titleEl = document.getElementById('kidModalTitle');
+            const messageEl = document.getElementById('kidModalMessage');
+            const button = document.getElementById('kidModalButton');
+            
+            // 清除之前的类型
+            modal.className = 'kid-modal';
+            
+            // 根据类型设置图标、标题和按钮文字
+            switch(type) {
+                case 'success':
+                    icon.textContent = '✅';
+                    titleEl.textContent = title || '太棒啦！';
+                    button.textContent = '知道啦！';
+                    modal.classList.add('success');
+                    break;
+                case 'error':
+                    icon.textContent = '❌';
+                    titleEl.textContent = title || '哎呀！';
+                    button.textContent = '我明白了';
+                    modal.classList.add('error');
+                    break;
+                case 'warning':
+                    icon.textContent = '⚠️';
+                    titleEl.textContent = title || '注意哦！';
+                    button.textContent = '好的';
+                    modal.classList.add('warning');
+                    break;
+                case 'info':
+                    icon.textContent = '💡';
+                    titleEl.textContent = title || '提示';
+                    button.textContent = '我知道了';
+                    modal.classList.add('info');
+                    break;
+            }
+            
+            messageEl.textContent = message;
+            overlay.classList.add('show');
+        }
+        
+        function closeKidModal(event) {
+            if (event && event.target.id !== 'kidModalOverlay' && event.target.id !== 'kidModalButton') {
+                return;
+            }
+            const overlay = document.getElementById('kidModalOverlay');
+            overlay.classList.remove('show');
+        }
+        
+        // 页面加载时加载验证码
+        window.onload = function() {
+            refreshLoginCaptcha();
+        };
+        
+        // 刷新登录验证码
+        async function refreshLoginCaptcha() {
+            try {
+                const response = await fetch('/api/captcha/generate');
+                const result = await response.json();
+                if (result.status === 'SUCCESS') {
+                    document.getElementById('loginCaptchaImg').src = result.data.image;
+                }
+            } catch (error) {
+                console.error('加载验证码失败:', error);
+            }
+        }
+        
+        // 刷新注册验证码
+        async function refreshRegisterCaptcha() {
+            try {
+                const response = await fetch('/api/captcha/generate');
+                const result = await response.json();
+                if (result.status === 'SUCCESS') {
+                    document.getElementById('registerCaptchaImg').src = result.data.image;
+                }
+            } catch (error) {
+                console.error('加载验证码失败:', error);
+            }
+        }
+        
+        function showRegister() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('registerForm').style.display = 'block';
+            // 切换到注册表单时加载验证码
+            refreshRegisterCaptcha();
+        }
+
+        function showLogin() {
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+            // 切换到登录表单时刷新验证码
+            refreshLoginCaptcha();
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const captcha = document.getElementById('loginCaptcha').value;
+
+            if (!username || !password) {
+                showKidModal('warning', '请先输入你的用户名和密码哦！');
+                return;
+            }
+            
+            if (!captcha) {
+                showKidModal('warning', '别忘了输入验证码哦！');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password, captcha})
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'SUCCESS') {
+                    if (data.data.role === 'ADMIN') {
+                        window.location.href = '/admin.html';
+                    } else {
+                        window.location.href = '/index.html';
+                    }
+                } else {
+                    showKidModal('error', data.message);
+                    // 验证失败后刷新验证码
+                    refreshLoginCaptcha();
+                    document.getElementById('loginCaptcha').value = '';
+                }
+            } catch (error) {
+                showKidModal('error', '登录失败啦，请再试一次吧！');
+                refreshLoginCaptcha();
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const gender = document.getElementById('registerGender').value;
+            const age = document.getElementById('registerAge').value;
+            const email = document.getElementById('registerEmail').value;
+            const captcha = document.getElementById('registerCaptcha').value;
+
+            if (!username || !password) {
+                showKidModal('warning', '请先输入你的用户名和密码哦！');
+                return;
+            }
+            
+            if (!gender) {
+                showKidModal('warning', '请选择你的性别哦！');
+                return;
+            }
+            
+            if (!age) {
+                showKidModal('warning', '请告诉我们你的年龄哦！');
+                return;
+            }
+            
+            const ageNum = parseInt(age);
+            if (isNaN(ageNum) || ageNum < 1 || ageNum > 120) {
+                showKidModal('warning', '年龄要在1-120之间哦！');
+                return;
+            }
+            
+            if (!captcha) {
+                showKidModal('warning', '别忘了输入验证码哦！');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password, gender, age, email, captcha})
+                });
+
+                const data = await response.json();
+                
+                if (data.status === 'SUCCESS') {
+                    showKidModal('success', '注册成功啦！现在可以登录了！', '欢迎加入！');
+                    setTimeout(() => {
+                        showLogin();
+                        closeKidModal();
+                    }, 2000);
+                } else {
+                    showKidModal('error', data.message);
+                    // 验证失败后刷新验证码
+                    refreshRegisterCaptcha();
+                    document.getElementById('registerCaptcha').value = '';
+                }
+            } catch (error) {
+                showKidModal('error', '注册失败啦，请再试一次吧！');
+                refreshRegisterCaptcha();
+            }
+        }
+
+        // 回车登录
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                if (document.getElementById('loginForm').style.display !== 'none') {
+                    login();
+                } else {
+                    register();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

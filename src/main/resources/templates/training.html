@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>训练界面</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .training-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .image-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 20px auto;
+        }
+        #training-image {
+            max-width: 100%;
+            border: 2px solid #ccc;
+            cursor: crosshair;
+        }
+        #canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        .timer {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .answer-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background: white;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .training-container {
+                padding: 0;
+            }
+            
+            .card-header {
+                padding: 10px 15px;
+            }
+            
+            .card-header h4 {
+                font-size: 18px;
+                margin: 0;
+            }
+            
+            .timer {
+                font-size: 1.5rem;
+            }
+            
+            .card-header .btn {
+                padding: 5px 10px;
+                font-size: 14px;
+            }
+            
+            .col-md-9,
+            .col-md-3 {
+                padding: 0 5px;
+            }
+            
+            .card {
+                margin-bottom: 10px;
+            }
+            
+            .card-body {
+                padding: 10px;
+            }
+            
+            /* Canvas触摸优化 */
+            #training-image {
+                cursor: pointer;
+                touch-action: none;
+                -webkit-user-select: none;
+                user-select: none;
+            }
+            
+            #canvas-overlay {
+                touch-action: none;
+            }
+            
+            .image-wrapper {
+                margin: 10px auto;
+            }
+            
+            .answer-list {
+                max-height: 150px;
+                font-size: 14px;
+            }
+            
+            .btn {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .card-header h4 {
+                font-size: 16px;
+            }
+            
+            .timer {
+                font-size: 1.2rem;
+            }
+            
+            .answer-list {
+                max-height: 120px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="training-container">
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 id="training-title">训练中...</h4>
+                <div>
+                    <span class="timer" id="timer">00:00</span>
+                    <button class="btn btn-danger ms-3" onclick="window.location.href='/'">退出</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="image-wrapper">
+                            <img id="training-image" src="" alt="训练图片">
+                            <canvas id="canvas-overlay"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>答题区</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="answer-section">
+                            <p class="text-muted">点击图片进行答题</p>
+                        </div>
+                        <div class="answer-list mt-3" id="answer-list"></div>
+                        <button class="btn btn-success w-100 mt-3" onclick="submitAnswers()">提交答案</button>
+                        <button class="btn btn-secondary w-100 mt-2" onclick="clearAnswers()">清除答案</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/BaseTraining.js"></script>
+    <script src="/js/ArrowTracking.js"></script>
+    <script>
+        let currentTraining;
+        let startTime;
+        let timerInterval;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const trainingType = localStorage.getItem('currentTrainingType') || 'ARROW_TRACKING';
+            loadTrainingContent(trainingType);
+            startTimer();
+        });
+
+        function loadTrainingContent(type) {
+            fetch(`/api/training?type=${type}&difficulty=1`)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'SUCCESS' && result.data && result.data.length > 0) {
+                        const content = result.data[0];
+                        initTraining(content);
+                    } else {
+                        alert('暂无该类型训练内容');
+                        window.location.href = '/';
+                    }
+                })
+                .catch(error => {
+                    console.error('加载训练内容失败:', error);
+                    alert('加载失败，请重试');
+                });
+        }
+
+        function initTraining(content) {
+            document.getElementById('training-title').textContent = content.title;
+            const img = document.getElementById('training-image');
+            img.src = content.imagePath;
+            
+            img.onload = function() {
+                const canvas = document.getElementById('canvas-overlay');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                currentTraining = new ArrowTracking(content, img, canvas);
+                currentTraining.init();
+                
+                // 添加移动端触摸支持
+                addTouchSupport(img);
+            };
+        }
+        
+        // 移动端触摸事件支持
+        function addTouchSupport(element) {
+            element.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = element.getBoundingClientRect();
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                
+                // 模拟鼠标点击事件
+                const clickEvent = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                element.dispatchEvent(clickEvent);
+            }, { passive: false });
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const seconds = (elapsed % 60).toString().padStart(2, '0');
+                document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+            }, 1000);
+        }
+
+        function submitAnswers() {
+            if (!currentTraining) return;
+            
+            clearInterval(timerInterval);
+            const answers = currentTraining.getAnswers();
+            const timeSpent = Date.now() - startTime;
+            
+            const submission = {
+                contentId: currentTraining.content.id,
+                answers: answers,
+                totalTimeSpent: timeSpent
+                // userId不需要传，后端从session获取
+            };
+
+            fetch('/api/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(submission)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 'SUCCESS') {
+                    alert(`训练完成！得分：${result.data.score.toFixed(1)}`);
+                    window.location.href = '/';
+                } else {
+                    alert(`验证失败：${result.message}`);
+                }
+            })
+            .catch(error => {
+                console.error('提交失败:', error);
+                alert('提交失败，请重试');
+            });
+        }
+
+        function clearAnswers() {
+            if (currentTraining) {
+                currentTraining.clear();
+            }
+        }
+    </script>
+</body>
+</html>
