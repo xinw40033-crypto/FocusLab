@@ -36,6 +36,19 @@
             font-weight: bold;
             color: #007bff;
         }
+        .countdown-timer {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #dc3545;
+            margin-left: 30px;
+        }
+        .countdown-warning {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
         .answer-list {
             max-height: 200px;
             overflow-y: auto;
@@ -66,6 +79,11 @@
             
             .timer {
                 font-size: 1.5rem;
+            }
+            
+            .countdown-timer {
+                font-size: 1.5rem;
+                margin-left: 15px;
             }
             
             .card-header .btn {
@@ -122,6 +140,11 @@
                 font-size: 1.2rem;
             }
             
+            .countdown-timer {
+                font-size: 1.2rem;
+                margin-left: 10px;
+            }
+            
             .answer-list {
                 max-height: 120px;
                 font-size: 13px;
@@ -136,6 +159,7 @@
                 <h4 id="training-title">训练中...</h4>
                 <div>
                     <span class="timer" id="timer">00:00</span>
+                    <span class="countdown-timer" id="countdown-timer" style="display:none;">⏱ 00:00</span>
                     <button class="btn btn-danger ms-3" onclick="window.location.href='/'">退出</button>
                 </div>
             </div>
@@ -217,6 +241,16 @@
                 
                 // 添加移动端触摸支持
                 addTouchSupport(img);
+                
+                // 启动倒计时（如果配置了倒计时功能）
+                const countdownSeconds = currentTraining.getCountdownConfig();
+                if (countdownSeconds > 0) {
+                    currentTraining.setCountdown(countdownSeconds, function() {
+                        // 倒计时结束后自动提交
+                        alert('时间到！自动提交答案');
+                        submitAnswers();
+                    });
+                }
             };
         }
         
@@ -253,7 +287,10 @@
         function submitAnswers() {
             if (!currentTraining) return;
             
+            // 停止所有计时器
             clearInterval(timerInterval);
+            currentTraining.stopCountdown();
+            
             const answers = currentTraining.getAnswers();
             const timeSpent = Date.now() - startTime;
             
