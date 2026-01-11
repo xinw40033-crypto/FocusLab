@@ -1,6 +1,8 @@
+### Maven Build ###
 target/
 !.mvn/wrapper/maven-wrapper.jar
 /cp_debug_resources/
+*.class
 
 ### STS ###
 .apt_generated
@@ -16,6 +18,7 @@ target/
 *.iws
 *.iml
 *.ipr
+out/
 
 ### NetBeans ###
 /nbproject/private/
@@ -31,3 +34,23 @@ target/
 HELP.md
 .DS_Store
 Thumbs.db
+
+### Application Logs ###
+*.log
+logs/
+
+### Database ###
+*.db
+*.sqlite
+
+### Temporary Files ###
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+### Environment Variables ###
+.env
+.env.local
+.env.*.local

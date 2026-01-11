@@ -131,8 +131,110 @@ GET /api/report/{userId}
 - [x] 数据导入工具
 - [x] Docker部署配置
 - [x] 移动端适配
+- [x] Git版本控制配置
 - [ ] 用户系统完善
 - [ ] 数据统计分析
+
+## Git工作流程
+
+### 分支策略
+
+- **main**: 主分支，稳定版本，只接受来自develop或hotfix的合并
+- **develop**: 开发分支，日常开发工作在此进行
+- **feature/***: 特性分支，从develop创建，完成后合并回develop
+- **hotfix/***: 紧急修复分支，从main创建，修复后合并到main和develop
+
+### 提交规范
+
+使用语义化提交信息，格式：`<类型>: <简短描述>`
+
+**类型说明：**
+- `feat`: 新功能
+- `fix`: 修复bug
+- `docs`: 文档变更
+- `style`: 代码格式（不影响功能）
+- `refactor`: 重构
+- `perf`: 性能优化
+- `test`: 测试相关
+- `chore`: 构建/工具变动
+
+**提交示例：**
+```bash
+feat: 添加训练页面倒计时功能
+fix: 修复登录验证码不显示问题
+docs: 更新API文档
+```
+
+### 开发流程
+
+#### 1. 功能开发
+```bash
+# 从develop创建特性分支
+git checkout develop
+git pull origin develop
+git checkout -b feature/your-feature-name
+
+# 开发并提交
+git add .
+git commit  # 使用配置的提交模板
+
+# 推送到远程
+git push origin feature/your-feature-name
+
+# 创建Pull Request合并到develop
+```
+
+#### 2. 发布版本
+```bash
+# develop合并到main
+git checkout main
+git pull origin main
+git merge develop
+git push origin main
+
+# 打标签
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+```
+
+#### 3. 紧急修复
+```bash
+# 从main创建hotfix分支
+git checkout main
+git checkout -b hotfix/critical-bug-fix
+
+# 修复并提交
+git add .
+git commit -m "fix: 修复关键bug描述"
+
+# 合并回main和develop
+git checkout main
+git merge hotfix/critical-bug-fix
+git push origin main
+
+git checkout develop
+git merge hotfix/critical-bug-fix
+git push origin develop
+
+# 删除hotfix分支
+git branch -d hotfix/critical-bug-fix
+```
+
+### Pre-commit检查
+
+每次提交时自动执行以下检查：
+- ✅ 提交信息格式验证
+- ✅ 合并冲突标记检测
+- ✅ 敏感文件防护
+- ✅ 大文件警告（>5MB）
+
+### 团队协作规范
+
+1. **代码审查**: 所有合并到main/develop的代码必须经过Code Review
+2. **分支清理**: 特性分支合并后及时删除
+3. **同步更新**: 每日开始工作前先拉取最新代码
+4. **避免force push**: 除非确实必要，否则不要使用`git push -f`
+5. **小步提交**: 每个commit只做一件事，便于回滚和追踪
 
 ## 许可证
 MIT License
